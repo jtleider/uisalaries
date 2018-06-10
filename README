@@ -1,0 +1,4 @@
+This project will pull data from the University of Illinois Board of Trustees'
+Gray Book (https://www.bot.uillinois.edu/resources/gray_book) and perform some
+descriptive analyses in Python.
+
