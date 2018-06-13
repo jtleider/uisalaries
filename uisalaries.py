@@ -29,4 +29,10 @@ data.loc[addltitlerow, data.columns[0]] = np.nan
 data['Employee Name'] = data['Employee Name'].fillna(method='ffill')
 
 # Integrate subheaders into the data
+data['College'] = data.iloc[0, 0]
+data['Dept'] = data['Employee Name'].where(data['Job Title'].isnull())
+data['Dept'] = data['Dept'].fillna(method='ffill')
+data = data.drop(data.loc[data['Job Title'].isnull()].index)
+
+# Do something with employee totals
 
