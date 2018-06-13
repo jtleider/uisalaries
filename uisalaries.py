@@ -17,7 +17,16 @@ for col in range(-1, -4-1, -1):
 assert all(data.loc[totalrow, 'Job Title'].isnull())
 data.loc[totalrow, 'Job Title'] = 'Employee Total for All Jobs...'
 data.loc[totalrow, 'Employee Name'] = np.nan
-data['Employee Name'] = data['Employee Name'].fillna(method='ffill')
 
 # Need to fix read-in of rows for the same person but different job title; values are being placed in the wrong columns
+addltitlerow = (data['Proposed Salary'].isnull() & ~data['Present Salary'].isnull())
+assert data.columns[-1] == 'Proposed Salary'
+for col in range(len(data.columns)-1, 0, -1):
+	data.loc[addltitlerow, data.columns[col]] = data.loc[addltitlerow, data.columns[col-1]]
+data.loc[addltitlerow, data.columns[0]] = np.nan
+
+# Copy down employee names
+data['Employee Name'] = data['Employee Name'].fillna(method='ffill')
+
+# Integrate subheaders into the data
 
