@@ -56,9 +56,12 @@ def collegeSalaries(code):
 
 	# Convert numeric columns
 	for col in ['Present FTE', 'Proposed FTE', 'Present Salary', 'Proposed Salary']:
-		data[col] = data[col].str.replace('$', '', regex=False)
-		data[col] = data[col].str.replace(',', '', regex=False)
-		data[col] = pd.to_numeric(data[col])
+		try:
+			data[col] = data[col].str.replace('$', '', regex=False).str.replace(',', '', regex=False)
+		except AttributeError:
+			pass
+		finally:
+			data[col] = pd.to_numeric(data[col])
 
 	return data
 
