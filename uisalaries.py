@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import requests
 
+debug = False
+
 def collegeSalaries(code, sleep=30):
 	"""Return pandas DataFrame with 2017-2018 Gray Book Information for given college of the University of Illinois.
 
@@ -84,18 +86,37 @@ for j in ['Present FTE', 'Proposed FTE', 'Present Salary', 'Proposed Salary']:
 	uicData.loc[uicData['employee_nrow'] == 1, 'comptotal_'+j] = uicData[j]
 	actualcomptotal['Total computed from data: '+j] = uicData.loc[uicData['Job Title'] != 'Employee Total for All Jobs...'].groupby('Employee Name')[j].sum()
 	actualcomptotal['Total shown in data: '+j] = uicData[['Employee Name', 'comptotal_'+j]].drop_duplicates().set_index('Employee Name')
-	print(actualcomptotal.loc[abs(actualcomptotal['Total computed from data: '+j] - actualcomptotal['Total shown in data: '+j])>.01,
+	if debug: print(actualcomptotal.loc[abs(actualcomptotal['Total computed from data: '+j] - actualcomptotal['Total shown in data: '+j])>.01,
 		['Total computed from data: '+j, 'Total shown in data: '+j]])
 # Discrepancies between totals shown in data and totals computed from data appear to be due to appointments outside of UIC, in particular, System Offices appointments
 # Continue with totals shown in data
 del actualcomptotal
 
-# Create DataFrame with one row per employee giving their total salary and FTE
-salaries = uicData[['Employee Name', 'comptotal_Present FTE', 'comptotal_Proposed FTE', 'comptotal_Present Salary', 'comptotal_Proposed Salary']]
+# Create DataFrame with one row per employee x college/department giving their total salary and FTE (across all colleges/departments, where employee has multiple appointments)
+salaries = uicData[['Employee Name', 'comptotal_Present FTE', 'comptotal_Proposed FTE', 'comptotal_Present Salary', 'comptotal_Proposed Salary', 'College', 'Dept']]
 salaries = salaries.drop(salaries.loc[salaries.duplicated()].index)
 salaries = salaries.rename({'Employee Name': 'empname', 'comptotal_Present FTE': 'curfte', 'comptotal_Proposed FTE': 'newfte',
-	'comptotal_Present Salary': 'cursalary', 'comptotal_Proposed Salary': 'newsalary'}, axis=1)
-salaries.set_index('empname', inplace=True)
-assert salaries.index.is_unique == True
-salaries.sort_index(inplace=True)
+	'comptotal_Present Salary': 'cursalary', 'comptotal_Proposed Salary': 'newsalary', 'College': 'college', 'Dept': 'dept'}, axis=1)
+assert any(salaries[['empname', 'college', 'dept']].duplicated()) == False
+
+# Compute salary/FTE
+salaries['cursalaryperfte'] = salaries['cursalary'] / salaries['curfte']
+salaries['newsalaryperfte'] = salaries['newsalary'] / salaries['newfte']
+
+def deptReport(salaries, dept, var='newsalaryperfte'):
+	"""Generate report by department (within college).
+
+	Args:
+		salaries: pandas DataFrame with salary data.
+		dept (str): Department for which to produce report.
+		var (str): Variable on which to produce report.
+
+	Returns:
+		None
+	"""
+	ranks = salaries.loc[salaries.dept == dept, var].sort_values(ascending=False).rank()
+	ranks.name = 'Rank'
+	print(pd.concat([salaries[salaries.dept == dept].sort_values(var, ascending=False)[['college', 'dept', 'empname', var]], ranks], axis=1))
+deptReport(salaries, '846 - Managerial Studies')
+
 
