@@ -34,5 +34,25 @@ data['Dept'] = data['Employee Name'].where(data['Job Title'].isnull())
 data['Dept'] = data['Dept'].fillna(method='ffill')
 data = data.drop(data.loc[data['Job Title'].isnull()].index)
 
-# Do something with employee totals
+# Convert numeric columns
+for col in ['Present FTE', 'Proposed FTE', 'Present Salary', 'Proposed Salary']:
+	data[col] = data[col].str.replace('$', '', regex=False)
+	data[col] = data[col].str.replace(',', '', regex=False)
+	data[col] = pd.to_numeric(data[col])
+
+# Create DataFrame with one row per employee giving their total proposed salary, together with college and department
+data['employee_nrow'] = data.groupby('Employee Name')['Employee Name'].transform(lambda s: sum(s.duplicated())+1)
+actualcomptotal = data[['Employee Name']].copy() # DataFrame for comparing totals shown in data to actual totals we compute from the data
+actualcomptotal.set_index('Employee Name', inplace=True)
+for j in ['Present FTE', 'Proposed FTE', 'Present Salary', 'Proposed Salary']:
+	data['comptotal_'+j] = data[j].where(data['Job Title'] == 'Employee Total for All Jobs...')
+	data['comptotal_'+j] = data.groupby('Employee Name')['comptotal_'+j].transform(np.max)
+	data.loc[data['employee_nrow'] == 1, 'comptotal_'+j] = data[j]
+	actualcomptotal['Computed total: '+j] = data.loc[data['Job Title'] != 'Employee Total for All Jobs...'].groupby('Employee Name')[j].sum()
+	actualcomptotal['Total shown in data: '+j] = data[['Employee Name', 'comptotal_'+j]].drop_duplicates().set_index('Employee Name')
+
+salaries = data[['Employee Name', 'comptotal_Present FTE', 'comptotal_Proposed FTE', 'comptotal_Present Salary', 'comptotal_Proposed Salary']]
+salaries = salaries.drop(salaries.loc[salaries.duplicated()].index)
+salaries = salaries.rename({'Employee Name': 'empname', 'comptotal_Present FTE': 'curfte', 'comptotal_Proposed FTE': 'newfte',
+	'comptotal_Present Salary': 'cursalary', 'comptotal_Proposed Salary': 'newsalary'}, axis=1)
 
