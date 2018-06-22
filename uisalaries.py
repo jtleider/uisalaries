@@ -3,11 +3,12 @@ import pandas as pd
 import numpy as np
 import requests
 
-def collegeSalaries(code):
+def collegeSalaries(code, sleep=30):
 	"""Return pandas DataFrame with 2017-2018 Gray Book Information for given college of the University of Illinois.
 
 	Args:
 		code (str): Code indicating college for which to download data.
+		sleep (int): Number of seconds to sleep after making network request. Only applies where data not already cached.
 
 	Returns:
 		pandas DataFrame with all Gray Book information for the given college.
@@ -22,6 +23,7 @@ def collegeSalaries(code):
 		r = requests.get('http://www.trustees.uillinois.edu/trustees/resources/17-18-Graybook/{}.html'.format(code))
 		with open('data/{}.html'.format(code), 'x') as fp:
 			fp.write(r.text)
+		time.sleep(sleep)
 		data = pd.read_html(r.text)
 	assert len(data) == 1
 	data = data[0]
@@ -68,7 +70,6 @@ def collegeSalaries(code):
 uicData = []
 for college in 'JV GF FR JY FL JP JA FZ GA FV GE GC GS FN FM FP FQ JM FS JD GH GT JT FT GQ FW JS FX JB JU FY GL JK GN JL GP HY JW JE JX JC JJ JF'.split():
 	uicData.append(collegeSalaries(college))
-	time.sleep(30)
 uicData = pd.concat(uicData)
 
 # Create DataFrame with one row per employee giving their total proposed salary, together with college and department
