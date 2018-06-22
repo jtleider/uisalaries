@@ -67,24 +67,35 @@ def collegeSalaries(code, sleep=30):
 
 	return data
 
+# Pull salary data for each UIC college
 uicData = []
 for college in 'JV GF FR JY FL JP JA FZ GA FV GE GC GS FN FM FP FQ JM FS JD GH GT JT FT GQ FW JS FX JB JU FY GL JK GN JL GP HY JW JE JX JC JJ JF'.split():
 	uicData.append(collegeSalaries(college))
 uicData = pd.concat(uicData)
+uicData.reset_index(drop=True, inplace=True)
 
-# Create DataFrame with one row per employee giving their total proposed salary, together with college and department
-data['employee_nrow'] = data.groupby('Employee Name')['Employee Name'].transform(lambda s: sum(s.duplicated())+1)
-actualcomptotal = data[['Employee Name']].copy() # DataFrame for comparing totals shown in data to actual totals we compute from the data
+# Compute total salary and FTE for each employee
+uicData['employee_nrow'] = uicData.groupby('Employee Name')['Employee Name'].transform(lambda s: sum(s.duplicated())+1)
+actualcomptotal = uicData[['Employee Name']].copy() # DataFrame for comparing totals shown in uicData to actual totals we compute from the uicData
 actualcomptotal.set_index('Employee Name', inplace=True)
 for j in ['Present FTE', 'Proposed FTE', 'Present Salary', 'Proposed Salary']:
-	data['comptotal_'+j] = data[j].where(data['Job Title'] == 'Employee Total for All Jobs...')
-	data['comptotal_'+j] = data.groupby('Employee Name')['comptotal_'+j].transform(np.max)
-	data.loc[data['employee_nrow'] == 1, 'comptotal_'+j] = data[j]
-	actualcomptotal['Computed total: '+j] = data.loc[data['Job Title'] != 'Employee Total for All Jobs...'].groupby('Employee Name')[j].sum()
-	actualcomptotal['Total shown in data: '+j] = data[['Employee Name', 'comptotal_'+j]].drop_duplicates().set_index('Employee Name')
+	uicData['comptotal_'+j] = uicData[j].where(uicData['Job Title'] == 'Employee Total for All Jobs...')
+	uicData['comptotal_'+j] = uicData.groupby('Employee Name')['comptotal_'+j].transform(np.max)
+	uicData.loc[uicData['employee_nrow'] == 1, 'comptotal_'+j] = uicData[j]
+	actualcomptotal['Total computed from data: '+j] = uicData.loc[uicData['Job Title'] != 'Employee Total for All Jobs...'].groupby('Employee Name')[j].sum()
+	actualcomptotal['Total shown in data: '+j] = uicData[['Employee Name', 'comptotal_'+j]].drop_duplicates().set_index('Employee Name')
+	print(actualcomptotal.loc[abs(actualcomptotal['Total computed from data: '+j] - actualcomptotal['Total shown in data: '+j])>.01,
+		['Total computed from data: '+j, 'Total shown in data: '+j]])
+# Discrepancies between totals shown in data and totals computed from data appear to be due to appointments outside of UIC, in particular, System Offices appointments
+# Continue with totals shown in data
+del actualcomptotal
 
-salaries = data[['Employee Name', 'comptotal_Present FTE', 'comptotal_Proposed FTE', 'comptotal_Present Salary', 'comptotal_Proposed Salary']]
+# Create DataFrame with one row per employee giving their total salary and FTE
+salaries = uicData[['Employee Name', 'comptotal_Present FTE', 'comptotal_Proposed FTE', 'comptotal_Present Salary', 'comptotal_Proposed Salary']]
 salaries = salaries.drop(salaries.loc[salaries.duplicated()].index)
 salaries = salaries.rename({'Employee Name': 'empname', 'comptotal_Present FTE': 'curfte', 'comptotal_Proposed FTE': 'newfte',
 	'comptotal_Present Salary': 'cursalary', 'comptotal_Proposed Salary': 'newsalary'}, axis=1)
+salaries.set_index('empname', inplace=True)
+assert salaries.index.is_unique == True
+salaries.sort_index(inplace=True)
 
