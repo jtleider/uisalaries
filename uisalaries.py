@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 import numpy as np
 import requests
@@ -61,7 +62,11 @@ def collegeSalaries(code):
 
 	return data
 
-# Add code here
+uicData = []
+for college in 'JV GF FR JY FL JP JA FZ GA FV GE GC GS FN FM FP FQ JM FS JD GH GT JT FT GQ FW JS FX JB JU FY GL JK GN JL GP HY JW JE JX JC JJ JF'.split():
+	uicData.append(collegeSalaries(college))
+	time.sleep(30)
+uicData = pd.concat(uicData)
 
 # Create DataFrame with one row per employee giving their total proposed salary, together with college and department
 data['employee_nrow'] = data.groupby('Employee Name')['Employee Name'].transform(lambda s: sum(s.duplicated())+1)
