@@ -1,11 +1,12 @@
 import pandas as pd
 import numpy as np
+import requests
 
 def collegeSalaries(code):
 	"""Return pandas DataFrame with 2017-2018 Gray Book Information for given college of the University of Illinois.
 
 	Args:
-		code: Code indicating college for which to download data.
+		code (str): Code indicating college for which to download data.
 
 	Returns:
 		pandas DataFrame with all Gray Book information for the given college.
@@ -14,7 +15,13 @@ def collegeSalaries(code):
 		collegeSalaries('FY') # Returns DataFrame with information for University of Illinois, Chicago Campus, FY - School of Public Health.
 	"""
 	# Read HTML table into pandas DataFrame
-	data = pd.read_html('http://www.trustees.uillinois.edu/trustees/resources/17-18-Graybook/{}.html'.format(code))
+	try:
+		data = pd.read_html('data/{}.html'.format(code))
+	except ValueError:
+		r = requests.get('http://www.trustees.uillinois.edu/trustees/resources/17-18-Graybook/{}.html'.format(code))
+		with open('data/{}.html'.format(code), 'x') as fp:
+			fp.write(r.text)
+		data = pd.read_html(r.text)
 	assert len(data) == 1
 	data = data[0]
 
