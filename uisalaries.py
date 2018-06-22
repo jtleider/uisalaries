@@ -1,44 +1,60 @@
 import pandas as pd
 import numpy as np
 
-# Read HTML table into pandas DataFrame
-data = pd.read_html('http://www.trustees.uillinois.edu/trustees/resources/17-18-Graybook/FY.html')
-assert len(data) == 1
-data = data[0]
+def collegeSalaries(code):
+	"""Return pandas DataFrame with 2017-2018 Gray Book Information for given college of the University of Illinois.
 
-# Handle 'Employee Total for All Jobs...' properly; by default values are being placed in the wrong columns here
-totalrow = (data['Employee Name'] == 'Employee Total for All Jobs...')
-assert len(data.columns) == 8
-for col in range(-3, 0):
-	assert all(data.loc[totalrow].iloc[:, col].isnull())
-for col in range(-1, -4-1, -1):
-	data.loc[totalrow, data.columns[col]] = data.loc[totalrow, data.columns[col-3]]
-	data.loc[totalrow, data.columns[col-3]] = np.nan
-assert all(data.loc[totalrow, 'Job Title'].isnull())
-data.loc[totalrow, 'Job Title'] = 'Employee Total for All Jobs...'
-data.loc[totalrow, 'Employee Name'] = np.nan
+	Args:
+		code: Code indicating college for which to download data.
 
-# Need to fix read-in of rows for the same person but different job title; values are being placed in the wrong columns
-addltitlerow = (data['Proposed Salary'].isnull() & ~data['Present Salary'].isnull())
-assert data.columns[-1] == 'Proposed Salary'
-for col in range(len(data.columns)-1, 0, -1):
-	data.loc[addltitlerow, data.columns[col]] = data.loc[addltitlerow, data.columns[col-1]]
-data.loc[addltitlerow, data.columns[0]] = np.nan
+	Returns:
+		pandas DataFrame with all Gray Book information for the given college.
 
-# Copy down employee names
-data['Employee Name'] = data['Employee Name'].fillna(method='ffill')
+	Examples::
+		collegeSalaries('FY') # Returns DataFrame with information for University of Illinois, Chicago Campus, FY - School of Public Health.
+	"""
+	# Read HTML table into pandas DataFrame
+	data = pd.read_html('http://www.trustees.uillinois.edu/trustees/resources/17-18-Graybook/{}.html'.format(code))
+	assert len(data) == 1
+	data = data[0]
 
-# Integrate subheaders into the data
-data['College'] = data.iloc[0, 0]
-data['Dept'] = data['Employee Name'].where(data['Job Title'].isnull())
-data['Dept'] = data['Dept'].fillna(method='ffill')
-data = data.drop(data.loc[data['Job Title'].isnull()].index)
+	# Handle 'Employee Total for All Jobs...' properly; by default values are being placed in the wrong columns here
+	totalrow = (data['Employee Name'] == 'Employee Total for All Jobs...')
+	assert len(data.columns) == 8
+	for col in range(-3, 0):
+		assert all(data.loc[totalrow].iloc[:, col].isnull())
+	for col in range(-1, -4-1, -1):
+		data.loc[totalrow, data.columns[col]] = data.loc[totalrow, data.columns[col-3]]
+		data.loc[totalrow, data.columns[col-3]] = np.nan
+	assert all(data.loc[totalrow, 'Job Title'].isnull())
+	data.loc[totalrow, 'Job Title'] = 'Employee Total for All Jobs...'
+	data.loc[totalrow, 'Employee Name'] = np.nan
 
-# Convert numeric columns
-for col in ['Present FTE', 'Proposed FTE', 'Present Salary', 'Proposed Salary']:
-	data[col] = data[col].str.replace('$', '', regex=False)
-	data[col] = data[col].str.replace(',', '', regex=False)
-	data[col] = pd.to_numeric(data[col])
+	# Need to fix read-in of rows for the same person but different job title; values are being placed in the wrong columns
+	addltitlerow = (data['Proposed Salary'].isnull() & ~data['Present Salary'].isnull())
+	assert data.columns[-1] == 'Proposed Salary'
+	for col in range(len(data.columns)-1, 0, -1):
+		data.loc[addltitlerow, data.columns[col]] = data.loc[addltitlerow, data.columns[col-1]]
+	data.loc[addltitlerow, data.columns[0]] = np.nan
+
+	# Copy down employee names
+	data['Employee Name'] = data['Employee Name'].fillna(method='ffill')
+
+	# Integrate subheaders into the data
+	data['College'] = data.iloc[0, 0]
+	data['Dept'] = data['Employee Name'].where(data['Job Title'].isnull())
+	data['Dept'] = data['Dept'].fillna(method='ffill')
+	data = data.drop(data.loc[data['Job Title'].isnull()].index)
+
+	# Convert numeric columns
+	for col in ['Present FTE', 'Proposed FTE', 'Present Salary', 'Proposed Salary']:
+		data[col] = data[col].str.replace('$', '', regex=False)
+		data[col] = data[col].str.replace(',', '', regex=False)
+		data[col] = pd.to_numeric(data[col])
+
+	return data
+
+# Add code here
 
 # Create DataFrame with one row per employee giving their total proposed salary, together with college and department
 data['employee_nrow'] = data.groupby('Employee Name')['Employee Name'].transform(lambda s: sum(s.duplicated())+1)
