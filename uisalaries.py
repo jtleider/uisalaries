@@ -114,9 +114,9 @@ def deptReport(salaries, dept, var='newsalaryperfte'):
 	Returns:
 		None
 	"""
-	ranks = salaries.loc[salaries.dept == dept, var].sort_values(ascending=False).rank()
+	ranks = salaries.loc[salaries.dept == dept, var].rank(ascending=False)
 	ranks.name = 'Rank'
-	print(pd.concat([salaries[salaries.dept == dept].sort_values(var, ascending=False)[['college', 'dept', 'empname', var]], ranks], axis=1))
+	print(pd.concat([salaries.loc[salaries.dept == dept, ['college', 'dept', 'empname', var]], ranks], axis=1).sort_values(var, ascending=False))
 deptReport(salaries, '846 - Managerial Studies')
 
 
