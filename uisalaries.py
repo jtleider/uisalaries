@@ -4,12 +4,13 @@ import numpy as np
 import requests
 
 pd.set_option('display.max_rows', None)
-debug = False
+debug = True
 
-def collegeSalaries(code, sleep=30):
+def collegeSalaries(campus, code, sleep=30):
 	"""Return pandas DataFrame with 2017-2018 Gray Book Information for given college of the University of Illinois.
 
 	Args:
+		campus (str): Campus of which college is a part. This is noted in the returned DataFrame but is not used for downloading the data.
 		code (str): Code indicating college for which to download data.
 		sleep (int): Number of seconds to sleep after making network request. Only applies where data not already cached.
 
@@ -17,7 +18,7 @@ def collegeSalaries(code, sleep=30):
 		pandas DataFrame with all Gray Book information for the given college.
 
 	Examples::
-		collegeSalaries('FY') # Returns DataFrame with information for University of Illinois, Chicago Campus, FY - School of Public Health.
+		collegeSalaries('Chicago', 'FY') # Returns DataFrame with information for University of Illinois, Chicago Campus, FY - School of Public Health.
 	"""
 	# Read HTML table into pandas DataFrame
 	try:
@@ -54,6 +55,7 @@ def collegeSalaries(code, sleep=30):
 	data['Employee Name'] = data['Employee Name'].fillna(method='ffill')
 
 	# Integrate subheaders into the data
+	data['Campus'] = campus
 	data['College'] = data.iloc[0, 0]
 	data['Dept'] = data['Employee Name'].where(data['Job Title'].isnull())
 	data['Dept'] = data['Dept'].fillna(method='ffill')
@@ -71,34 +73,41 @@ def collegeSalaries(code, sleep=30):
 	return data
 
 # Pull salary data for each UIC college
-uicData = []
-for college in 'JV GF FR JY FL JP JA FZ GA FV GE GC GS FN FM FP FQ JM FS JD GH GT JT FT GQ FW JS FX JB JU FY GL JK GN JL GP HY JW JE JX JC JJ JF'.split():
-	uicData.append(collegeSalaries(college))
-uicData = pd.concat(uicData)
-uicData.reset_index(drop=True, inplace=True)
+colleges = {
+	'Urbana-Champaign': 'KL KY LD NQ LT LN NA NT KM KT NU KW KN MY KP NN KR KS LQ KU KV LB NS NB LM NH LF LP LG LL NC LR NJ LC NP NE',
+	'Chicago': 'JV GF FR JY FL JP JA FZ GA FV GE GC GS FN FM FP FQ JM FS JD GH GT JT FT GQ FW JS FX JB JU FY GL JK GN JL GP HY JW JE JX JC JJ JF',
+	'Springfield': 'SC SG PE PL SA PG SF PJ PH SB PF SE PK',
+	'System': 'AF AH AA AR AM AD AN AP AJ',
+}
+uiData = []
+for campus in colleges:
+	for college in colleges[campus].split():
+		uiData.append(collegeSalaries(campus, college))
+uiData = pd.concat(uiData)
+uiData.reset_index(drop=True, inplace=True)
 
 # Compute total salary and FTE for each employee
-uicData['employee_nrow'] = uicData.groupby('Employee Name')['Employee Name'].transform(lambda s: sum(s.duplicated())+1)
-actualcomptotal = uicData[['Employee Name']].copy() # DataFrame for comparing totals shown in uicData to actual totals we compute from the uicData
+uiData['employee_nrow'] = uiData.groupby('Employee Name')['Employee Name'].transform(lambda s: sum(s.duplicated())+1)
+actualcomptotal = uiData[['Employee Name']].copy() # DataFrame for comparing totals shown in uiData to actual totals we compute from the uiData
 actualcomptotal.set_index('Employee Name', inplace=True)
 for j in ['Present FTE', 'Proposed FTE', 'Present Salary', 'Proposed Salary']:
-	uicData['comptotal_'+j] = uicData[j].where(uicData['Job Title'] == 'Employee Total for All Jobs...')
-	uicData['comptotal_'+j] = uicData.groupby('Employee Name')['comptotal_'+j].transform(np.max)
-	uicData.loc[uicData['employee_nrow'] == 1, 'comptotal_'+j] = uicData[j]
-	actualcomptotal['Total computed from data: '+j] = uicData.loc[uicData['Job Title'] != 'Employee Total for All Jobs...'].groupby('Employee Name')[j].sum()
-	actualcomptotal['Total shown in data: '+j] = uicData[['Employee Name', 'comptotal_'+j]].drop_duplicates().set_index('Employee Name')
+	uiData['comptotal_'+j] = uiData[j].where(uiData['Job Title'] == 'Employee Total for All Jobs...')
+	uiData['comptotal_'+j] = uiData.groupby('Employee Name')['comptotal_'+j].transform(np.max)
+	uiData.loc[uiData['employee_nrow'] == 1, 'comptotal_'+j] = uiData[j]
+	actualcomptotal['Total computed from data: '+j] = uiData.loc[uiData['Job Title'] != 'Employee Total for All Jobs...'].groupby('Employee Name')[j].sum()
+	actualcomptotal['Total shown in data: '+j] = uiData[['Employee Name', 'comptotal_'+j]].drop_duplicates().set_index('Employee Name')
 	if debug: print(actualcomptotal.loc[abs(actualcomptotal['Total computed from data: '+j] - actualcomptotal['Total shown in data: '+j])>.01,
 		['Total computed from data: '+j, 'Total shown in data: '+j]])
+# REVISIT BELOW COMMENT
 # Discrepancies between totals shown in data and totals computed from data appear to be due to appointments outside of UIC, in particular, System Offices appointments
-# Continue with totals shown in data
 del actualcomptotal
 
 # Create DataFrame with one row per employee x college/department giving their total salary and FTE (across all colleges/departments, where employee has multiple appointments)
-salaries = uicData[['Employee Name', 'comptotal_Present FTE', 'comptotal_Proposed FTE', 'comptotal_Present Salary', 'comptotal_Proposed Salary', 'College', 'Dept']]
+salaries = uiData[['Employee Name', 'comptotal_Present FTE', 'comptotal_Proposed FTE', 'comptotal_Present Salary', 'comptotal_Proposed Salary', 'Campus', 'College', 'Dept']]
 salaries = salaries.drop(salaries.loc[salaries.duplicated()].index)
 salaries = salaries.rename({'Employee Name': 'empname', 'comptotal_Present FTE': 'curfte', 'comptotal_Proposed FTE': 'newfte',
-	'comptotal_Present Salary': 'cursalary', 'comptotal_Proposed Salary': 'newsalary', 'College': 'college', 'Dept': 'dept'}, axis=1)
-assert any(salaries[['empname', 'college', 'dept']].duplicated()) == False
+	'comptotal_Present Salary': 'cursalary', 'comptotal_Proposed Salary': 'newsalary', 'Campus': 'campus', 'College': 'college', 'Dept': 'dept'}, axis=1)
+assert any(salaries[['empname', 'campus', 'college', 'dept']].duplicated()) == False
 
 # Compute salary/FTE
 salaries['cursalaryperfte'] = salaries['cursalary'] / salaries['curfte']
@@ -120,7 +129,7 @@ def deptReport(salaries, dept, var='newsalaryperfte'):
 	"""
 	ranks = salaries.loc[salaries.dept == dept, var].rank(ascending=False)
 	ranks.name = 'Rank'
-	print(pd.concat([salaries.loc[salaries.dept == dept, ['college', 'dept', 'empname', var]], ranks], axis=1).sort_values(var, ascending=False))
+	print(pd.concat([salaries.loc[salaries.dept == dept, ['campus', 'college', 'dept', 'empname', var]], ranks], axis=1).sort_values(var, ascending=False))
 deptReport(salaries, '846 - Managerial Studies')
 
 # Report across departments
@@ -142,5 +151,5 @@ assert abs(gini(pd.Series([0, 100])) == 0.5)
 assert abs(gini(pd.Series([998000, 20000, 17500, 70000, 23500, 45200])) - .7202) < .00005 # http://www.peterrosenmai.com/lorenz-curve-graphing-tool-and-gini-coefficient-calculator?
 assert abs(gini(pd.Series([1, 1, 2, 2])) - .167) < .0005 # http://shlegeris.com/gini
 
-print(salaries.groupby(['college', 'dept'])['newsalaryperfte'].agg(['size', 'count', 'min', 'mean', 'max', gini]))
+print(salaries.groupby(['campus', 'college', 'dept'])['newsalaryperfte'].agg(['size', 'count', 'min', 'mean', 'max', gini]))
 
