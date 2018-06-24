@@ -24,6 +24,7 @@ def collegeSalaries(campus, code, sleep=30):
 	try:
 		data = pd.read_html('data/{}.html'.format(code))
 	except ValueError:
+		if debug: print('Downloading data for campus {}, college {}'.format(campus, code))
 		r = requests.get('http://www.trustees.uillinois.edu/trustees/resources/17-18-Graybook/{}.html'.format(code))
 		with open('data/{}.html'.format(code), 'x') as fp:
 			fp.write(r.text)
