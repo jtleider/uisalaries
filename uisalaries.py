@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import requests
 
+pd.set_option('display.max_rows', None)
 debug = False
 
 def collegeSalaries(code, sleep=30):
@@ -103,6 +104,7 @@ assert any(salaries[['empname', 'college', 'dept']].duplicated()) == False
 salaries['cursalaryperfte'] = salaries['cursalary'] / salaries['curfte']
 salaries['newsalaryperfte'] = salaries['newsalary'] / salaries['newfte']
 
+# Report by department
 def deptReport(salaries, dept, var='newsalaryperfte'):
 	"""Generate report by department (within college).
 
@@ -119,4 +121,24 @@ def deptReport(salaries, dept, var='newsalaryperfte'):
 	print(pd.concat([salaries.loc[salaries.dept == dept, ['college', 'dept', 'empname', var]], ranks], axis=1).sort_values(var, ascending=False))
 deptReport(salaries, '846 - Managerial Studies')
 
+# Report across departments
+def gini(y):
+	"""Calculate Gini coefficient for a pandas Series. Computation method from https://numbersandshapes.net/2017/09/the-gini-coefficient-and-income-inequality-in-australia/
+
+	Args:
+		y: pandas Series
+
+	Returns:
+		float: Gini coefficient of Series
+	"""
+	y = y.sort_values()
+	w = pd.concat([pd.Series([0]), y.cumsum()/y.sum()])
+	n = len(y)
+	return 1 - sum((1/float(n)) * (w.iloc[i] + w.iloc[i+1]) for i in range(n))
+assert abs(gini(pd.Series([1])) == 0)
+assert abs(gini(pd.Series([0, 100])) == 0.5)
+assert abs(gini(pd.Series([998000, 20000, 17500, 70000, 23500, 45200])) - .7202) < .00005 # http://www.peterrosenmai.com/lorenz-curve-graphing-tool-and-gini-coefficient-calculator?
+assert abs(gini(pd.Series([1, 1, 2, 2])) - .167) < .0005 # http://shlegeris.com/gini
+
+print(salaries.groupby(['college', 'dept'])['newsalaryperfte'].agg(['min', 'mean', 'max', gini]))
 
