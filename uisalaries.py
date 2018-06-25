@@ -4,7 +4,7 @@ import numpy as np
 import requests
 
 pd.set_option('display.max_rows', None)
-debug = True
+debug = False
 
 def collegeSalaries(campus, code, sleep=30):
 	"""Return pandas DataFrame with 2017-2018 Gray Book Information for given college of the University of Illinois.
@@ -99,8 +99,8 @@ for j in ['Present FTE', 'Proposed FTE', 'Present Salary', 'Proposed Salary']:
 	actualcomptotal['Total shown in data: '+j] = uiData[['Employee Name', 'comptotal_'+j]].drop_duplicates().set_index('Employee Name')
 	if debug: print(actualcomptotal.loc[abs(actualcomptotal['Total computed from data: '+j] - actualcomptotal['Total shown in data: '+j])>.01,
 		['Total computed from data: '+j, 'Total shown in data: '+j]])
-# REVISIT BELOW COMMENT
-# Discrepancies between totals shown in data and totals computed from data appear to be due to appointments outside of UIC, in particular, System Offices appointments
+# Some of the totals shown in the data simply don't add up, and it's not clear why not. In at least some cases, it looks like there may be more than one person with the same name.
+# In the absence of information to correct the totals shown, and given there are relatively few discrepancies, we will continue with the totals shown in the data.
 del actualcomptotal
 
 # Create DataFrame with one row per employee x college/department giving their total salary and FTE (across all colleges/departments, where employee has multiple appointments)
