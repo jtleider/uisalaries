@@ -103,10 +103,16 @@ for j in ['Present FTE', 'Proposed FTE', 'Present Salary', 'Proposed Salary']:
 # In the absence of information to correct the totals shown, and given there are relatively few discrepancies, we will continue with the totals shown in the data.
 del actualcomptotal
 
+# Compute list of job titles for each employee
+assert all(uiData['Job Title'].notnull())
+uiData['comptotal_Job Title'] = uiData['Job Title'].where(uiData['Job Title'] != 'Employee Total for All Jobs...', '')
+uiData['comptotal_Job Title'] = uiData.groupby(['Employee Name', 'Campus', 'College', 'Dept'])['comptotal_Job Title'].transform(lambda s: '; '.join(si for si in s if si != ''))
+
 # Create DataFrame with one row per employee x college/department giving their total salary and FTE (across all colleges/departments, where employee has multiple appointments)
-salaries = uiData[['Employee Name', 'comptotal_Present FTE', 'comptotal_Proposed FTE', 'comptotal_Present Salary', 'comptotal_Proposed Salary', 'Campus', 'College', 'Dept']]
+salaries = uiData[['Employee Name', 'comptotal_Job Title',
+	'comptotal_Present FTE', 'comptotal_Proposed FTE', 'comptotal_Present Salary', 'comptotal_Proposed Salary', 'Campus', 'College', 'Dept']]
 salaries = salaries.drop(salaries.loc[salaries.duplicated()].index)
-salaries = salaries.rename({'Employee Name': 'empname', 'comptotal_Present FTE': 'curfte', 'comptotal_Proposed FTE': 'newfte',
+salaries = salaries.rename({'Employee Name': 'empname', 'comptotal_Job Title': 'empdepttitle', 'comptotal_Present FTE': 'curfte', 'comptotal_Proposed FTE': 'newfte',
 	'comptotal_Present Salary': 'cursalary', 'comptotal_Proposed Salary': 'newsalary', 'Campus': 'campus', 'College': 'college', 'Dept': 'dept'}, axis=1)
 assert any(salaries[['empname', 'campus', 'college', 'dept']].duplicated()) == False
 
@@ -130,7 +136,7 @@ def deptReport(salaries, dept, var='newsalaryperfte'):
 	"""
 	ranks = salaries.loc[salaries.dept == dept, var].rank(ascending=False)
 	ranks.name = 'Rank'
-	print(pd.concat([salaries.loc[salaries.dept == dept, ['campus', 'college', 'dept', 'empname', var]], ranks], axis=1).sort_values(var, ascending=False))
+	print(pd.concat([salaries.loc[salaries.dept == dept, ['campus', 'college', 'dept', 'empname', 'empdepttitle', var]], ranks], axis=1).sort_values(var, ascending=False))
 deptReport(salaries, '846 - Managerial Studies')
 
 # Report across departments
