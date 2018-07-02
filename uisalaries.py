@@ -2,6 +2,9 @@ import time
 import pandas as pd
 import numpy as np
 import requests
+from bokeh.io import show
+from bokeh.plotting import figure
+from bokeh.models import ColumnDataSource
 
 pd.set_option('display.max_rows', None)
 debug = False
@@ -123,21 +126,32 @@ salaries['newsalaryperfte'] = salaries['newsalary'] / salaries['newfte']
 salaries.loc[salaries['newfte'] == 0, 'newsalaryperfte'] = np.nan
 
 # Report by department
-def deptReport(salaries, dept, var='newsalaryperfte'):
+def deptReport(salaries, dept, var='newsalaryperfte', varlabel='Salary', showFigure=False):
 	"""Generate report by department (within college).
 
 	Args:
 		salaries: pandas DataFrame with salary data.
 		dept (str): Department for which to produce report.
 		var (str): Variable on which to produce report.
+		varlabel (str): Label for variable on which to produce report (for figure).
+		showFigure (bool): Plot bar chart of salaries.
 
 	Returns:
-		None
+		pandas DataFrame with report for department.
 	"""
 	ranks = salaries.loc[salaries.dept == dept, var].rank(ascending=False)
 	ranks.name = 'Rank'
-	print(pd.concat([salaries.loc[salaries.dept == dept, ['campus', 'college', 'dept', 'empname', 'empdepttitle', var]], ranks], axis=1).sort_values(var, ascending=False))
-deptReport(salaries, '846 - Managerial Studies')
+	d = pd.concat([salaries.loc[salaries.dept == dept, ['campus', 'college', 'dept', 'empname', 'empdepttitle', var]], ranks], axis=1).sort_values(var, ascending=True).copy()
+	if showFigure:
+		d['ylabel'] = d.apply(lambda row: '{:g} {}'.format(row['Rank'], row['empname']), axis=1)
+		p = figure(y_range=d['ylabel'], x_axis_label='{} in 1000s'.format(varlabel), title='{} Range in Department {}'.format(varlabel, dept))
+		p.hbar(y=d['ylabel'], height=0.9, right=d[var]/1000)
+		show(p)
+		d.drop('ylabel', axis=1, inplace=True)
+	return d.sort_values(var, ascending=False)
+d = deptReport(salaries, '846 - Managerial Studies', showFigure=True)
+print(d)
+# Add hover text with titles
 
 # Report across departments
 def gini(y):
