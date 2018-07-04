@@ -151,14 +151,17 @@ def deptReport(salaries, dept, var='newsalaryperfte', varlabel='Salary', showFig
 			('Titles in Department', '@empdepttitle'),
 			(varlabel, "@{}{{0,0.00}}".format(var)),
 		]
-		p = figure(y_range=d['ylabel'], x_axis_label='{} in 1000s'.format(varlabel), title='{} Range in Department {}'.format(varlabel, dept), tooltips=TOOLTIPS)
+		p = figure(y_range=d['ylabel'], plot_height = len(d)*15, plot_width=1200,
+			x_axis_label='{} in 1000s'.format(varlabel), title='{} Range in Department {}'.format(varlabel, dept), tooltips=TOOLTIPS)
+		p.title.text_font_size = '20pt'
+		p.xaxis.axis_label_text_font_size = '16pt'
+		p.yaxis.major_label_text_font_size = '11pt'
 		p.hbar(y='ylabel', height=0.9, right=var+'_scaled', source=source)
 		show(p)
 		d.drop([var+'_scaled', 'ylabel'], axis=1, inplace=True)
 	return d.sort_values(var, ascending=False)
 d = deptReport(salaries, '846 - Managerial Studies', showFigure=True)
 print(d)
-# Make plot larger
 
 # Report across departments
 def gini(y):
