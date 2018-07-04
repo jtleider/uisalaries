@@ -2,9 +2,6 @@ import time
 import pandas as pd
 import numpy as np
 import requests
-from bokeh.io import show
-from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource, HoverTool
 
 pd.set_option('display.max_rows', None)
 debug = False
@@ -125,63 +122,7 @@ salaries.loc[salaries['curfte'] == 0, 'cursalaryperfte'] = np.nan
 salaries['newsalaryperfte'] = salaries['newsalary'] / salaries['newfte']
 salaries.loc[salaries['newfte'] == 0, 'newsalaryperfte'] = np.nan
 
-# Report by department
-def deptReport(salaries, dept, var='newsalaryperfte', varlabel='Salary', showFigure=False):
-	"""Generate report by department (within college).
-
-	Args:
-		salaries: pandas DataFrame with salary data.
-		dept (str): Department for which to produce report.
-		var (str): Variable on which to produce report.
-		varlabel (str): Label for variable on which to produce report (for figure).
-		showFigure (bool): Plot bar chart of salaries.
-
-	Returns:
-		pandas DataFrame with report for department.
-	"""
-	ranks = salaries.loc[salaries.dept == dept, var].rank(ascending=False)
-	ranks.name = 'Rank'
-	d = pd.concat([salaries.loc[salaries.dept == dept, ['campus', 'college', 'dept', 'empname', 'empdepttitle', var]], ranks], axis=1).sort_values(var, ascending=True).copy()
-	if showFigure:
-		d[var+'_scaled'] = d[var]/1000
-		d['ylabel'] = d.apply(lambda row: '{:g} {}'.format(row['Rank'], row['empname']), axis=1)
-		source = ColumnDataSource(d)
-		TOOLTIPS = [
-			('Employee', '@empname'),
-			('Titles in Department', '@empdepttitle'),
-			(varlabel, "@{}{{0,0.00}}".format(var)),
-		]
-		p = figure(y_range=d['ylabel'], plot_height = len(d)*15, plot_width=1200,
-			x_axis_label='{} in 1000s'.format(varlabel), title='{} Range in Department {}'.format(varlabel, dept), tooltips=TOOLTIPS)
-		p.title.text_font_size = '20pt'
-		p.xaxis.axis_label_text_font_size = '16pt'
-		p.yaxis.major_label_text_font_size = '11pt'
-		p.hbar(y='ylabel', height=0.9, right=var+'_scaled', source=source)
-		show(p)
-		d.drop([var+'_scaled', 'ylabel'], axis=1, inplace=True)
-	return d.sort_values(var, ascending=False)
-d = deptReport(salaries, '846 - Managerial Studies', showFigure=True)
-print(d)
-
-# Report across departments
-def gini(y):
-	"""Calculate Gini coefficient for a pandas Series. Computation method from https://numbersandshapes.net/2017/09/the-gini-coefficient-and-income-inequality-in-australia/
-
-	Args:
-		y: pandas Series
-
-	Returns:
-		float: Gini coefficient of Series
-	"""
-	y = y.loc[y.notnull()].sort_values()
-	w = pd.concat([pd.Series([0]), y.cumsum()/y.sum()])
-	n = len(y)
-	return 1 - sum((1/float(n)) * (w.iloc[i] + w.iloc[i+1]) for i in range(n))
-assert abs(gini(pd.Series([1])) == 0)
-assert abs(gini(pd.Series([0, 100])) == 0.5)
-assert abs(gini(pd.Series([998000, 20000, 17500, 70000, 23500, 45200])) - .7202) < .00005 # http://www.peterrosenmai.com/lorenz-curve-graphing-tool-and-gini-coefficient-calculator?
-assert abs(gini(pd.Series([1, 1, 2, 2])) - .167) < .0005 # http://shlegeris.com/gini
-
-print(salaries.groupby(['campus', 'college', 'dept'])['newsalaryperfte'].agg(['size', 'count', 'min', 'mean', 'max', gini]))
-# Create plot for this
+# Export datasets to CSV
+uiData.to_csv('uiData.csv') # includes all information in raw data
+salaries.to_csv('salaries.csv') # includes summary data per employee
 
