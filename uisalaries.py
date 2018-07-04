@@ -4,7 +4,7 @@ import numpy as np
 import requests
 from bokeh.io import show
 from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, HoverTool
 
 pd.set_option('display.max_rows', None)
 debug = False
@@ -143,15 +143,22 @@ def deptReport(salaries, dept, var='newsalaryperfte', varlabel='Salary', showFig
 	ranks.name = 'Rank'
 	d = pd.concat([salaries.loc[salaries.dept == dept, ['campus', 'college', 'dept', 'empname', 'empdepttitle', var]], ranks], axis=1).sort_values(var, ascending=True).copy()
 	if showFigure:
+		d[var+'_scaled'] = d[var]/1000
 		d['ylabel'] = d.apply(lambda row: '{:g} {}'.format(row['Rank'], row['empname']), axis=1)
-		p = figure(y_range=d['ylabel'], x_axis_label='{} in 1000s'.format(varlabel), title='{} Range in Department {}'.format(varlabel, dept))
-		p.hbar(y=d['ylabel'], height=0.9, right=d[var]/1000)
+		source = ColumnDataSource(d)
+		TOOLTIPS = [
+			('Employee', '@empname'),
+			('Titles in Department', '@empdepttitle'),
+			(varlabel, "@{}{{0,0.00}}".format(var)),
+		]
+		p = figure(y_range=d['ylabel'], x_axis_label='{} in 1000s'.format(varlabel), title='{} Range in Department {}'.format(varlabel, dept), tooltips=TOOLTIPS)
+		p.hbar(y='ylabel', height=0.9, right=var+'_scaled', source=source)
 		show(p)
-		d.drop('ylabel', axis=1, inplace=True)
+		d.drop([var+'_scaled', 'ylabel'], axis=1, inplace=True)
 	return d.sort_values(var, ascending=False)
 d = deptReport(salaries, '846 - Managerial Studies', showFigure=True)
 print(d)
-# Add hover text with titles
+# Make plot larger
 
 # Report across departments
 def gini(y):
@@ -173,4 +180,5 @@ assert abs(gini(pd.Series([998000, 20000, 17500, 70000, 23500, 45200])) - .7202)
 assert abs(gini(pd.Series([1, 1, 2, 2])) - .167) < .0005 # http://shlegeris.com/gini
 
 print(salaries.groupby(['campus', 'college', 'dept'])['newsalaryperfte'].agg(['size', 'count', 'min', 'mean', 'max', gini]))
+# Create plot for this
 
