@@ -38,7 +38,7 @@ def selection():
 def update():
 	df = selection()
 	source = ColumnDataSource(df)
-	newfigure = figure(plot_width=1200, plot_height=60+len(df)*15, y_range=df['ylabel'], x_axis_label='Salary in 1000s', tooltips=TOOLTIPS)
+	newfigure = figure(plot_width=1200, plot_height=60+len(df)*15, y_range=df['ylabel'], x_axis_label='Salary in 1000s', tooltips=TOOLTIPS, tools='hover,save')
 	newfigure.title.text_font_size = '20pt'
 	newfigure.xaxis.axis_label_text_font_size = '16pt'
 	newfigure.yaxis.major_label_text_font_size = '11pt'
