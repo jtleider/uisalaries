@@ -1,4 +1,32 @@
-This project will pull data from the University of Illinois Board of Trustees'
-Gray Book (https://www.bot.uillinois.edu/resources/gray_book) and perform some
-descriptive analyses in Python.
+This project includes code to download data from the University of Illinois
+Board of Trustees' Gray Book (https://www.bot.uillinois.edu/resources/gray_book)
+and create some simple presentations of the data using the pandas and bokeh
+Python libraries. The Gray Book provides information on salaries for the
+2017-2018 academic year, as well as previous salaries from the 2016-2017
+academic year.
 
+The Gray Book provides data for employees within departments, where departments
+nest within colleges and colleges nest within campuses. It provides information
+on total salary for each employee as well as a salary breakdown for
+each position held at the University of Illinois, in the case of employees
+holding more than one position. The presentations of the data in this project
+all use the total salary for each employee, even though they are filtered
+at the department level. This was done so that it would be possible to compare
+the distribution of overall salary among coworkers, regardless of whether
+that salary derived entirely from the given department. Also, the presentations
+divide the salary by employees' full-time equivalent percentage (FTE) to
+facilitate comparisons. This way, an employee working part-time can still enter
+into the presentation of the salary distribution.
+
+There is some missing data where the FTE for an employee was shown as zero.
+
+This project includes three main files:
+* processData.py downloads the data, processes it, and saves CSV files with the raw data plus some additional computed variables (uiData.csv) and with summary data by employee within campus/college/department (salaries.csv).
+* deptReport.py presents a bar chart showing the range of salaries in a given department.
+* crossDeptReport.py presents a table summarizing the distribution of salaries for each department.
+The latter two files are Bokeh server apps and can be run using
+	bokeh serve --show deptReport.py
+or
+	bokeh serve --show crossDeptReport.py
+
+This code has been tested in Python 3.6.6.
