@@ -81,7 +81,7 @@ layout = row(
 		selectCollege,
 		selectDept,
 		excludeSlider,
-		Div(text='Salaries per 1.0 FTE are shown to allow comparisons for employees not on a standard full-time appointment.'),
+		Div(text='Total salary shown (including any salary from other departments). Salaries per 1.0 FTE are shown to allow comparisons for employees not on a standard full-time appointment.'),
 	),
 	figure())
 selectCampusUpdate()

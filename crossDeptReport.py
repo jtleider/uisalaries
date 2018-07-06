@@ -61,7 +61,7 @@ l = layout([
 	[Div(text='<font size="3"><b>Report on Salaries across Departments</b></font>', width=500)],
 	[selectVariable, selectCampus, selectCollege],
 	[DataTable()],
-	[Div(text='Data on salaries per 1.0 FTE are shown to allow comparisons for employees not on a standard full-time appointment.', width=1000)],
+	[Div(text='Data on total salary shown (including any salary employees received from other departments). Data on salaries per 1.0 FTE are shown to allow comparisons for employees not on a standard full-time appointment.', width=1000)],
 ])
 selectCampusUpdate()
 curdoc().add_root(l)
