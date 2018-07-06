@@ -1,7 +1,7 @@
 import pandas as pd
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource, HoverTool
-from bokeh.models.widgets import Select, Div
+from bokeh.models.widgets import Select, Div, Slider
 from bokeh.layouts import row, column
 from bokeh.io import curdoc
 
@@ -11,6 +11,8 @@ selectVariable = Select(title='Variable', options=['Current Salary', 'Previous S
 selectCampus = Select(title='Campus', value='Chicago', options=['Chicago', 'Springfield', 'Urbana-Champaign', 'System'])
 selectCollege = Select(title='College')
 selectDept = Select(title='Department')
+
+excludeSlider = Slider(start=0, end=5, value=0, step=1, title="Exclude top")
 
 TOOLTIPS = [
 	('Employee', '@empname'),
@@ -24,12 +26,14 @@ def selection():
 	campus = selectCampus.value
 	college = selectCollege.value
 	dept = selectDept.value
+	if excludeSlider.value > 0: exclude = slice(None, -excludeSlider.value)
+	else: exclude = slice(None)
 	df = salaries.loc[(salaries.campus == campus) & (salaries.college == college) & (salaries.dept == dept), 
 		['empname', 'empdepttitle', var]].rename(columns={var: 'value'})
 	df['Rank'] = df['value'].rank(ascending=False)
 	df['ylabel'] = df.apply(lambda row: '{:g} {}'.format(row['Rank'], row['empname']), axis=1)
 	df['value_scaled'] = df['value']/1000
-	return df.sort_values('value', ascending=True)
+	return df.sort_values('value', ascending=True).iloc[exclude]
 
 def update():
 	df = selection()
@@ -49,10 +53,15 @@ def selectCollegeUpdate():
 	selectDept.options = sorted(list(set(salaries.loc[(salaries.campus == selectCampus.value) & (salaries.college == selectCollege.value), 'dept'])))
 	selectDept.value = selectDept.options[0]
 
+def selectDeptUpdate():
+	if excludeSlider.value > 0: excludeSlider.value = 0
+	else: update()
+
 selectVariable.on_change('value', lambda attr, old, new: update())
 selectCampus.on_change('value', lambda attr, old, new: selectCampusUpdate())
 selectCollege.on_change('value', lambda attr, old, new: selectCollegeUpdate())
-selectDept.on_change('value', lambda attr, old, new: update())
+selectDept.on_change('value', lambda attr, old, new: selectDeptUpdate())
+excludeSlider.on_change('value', lambda attr, old, new: update())
 
 layout = row(
 	column(
@@ -61,6 +70,7 @@ layout = row(
 		selectCampus,
 		selectCollege,
 		selectDept,
+		excludeSlider,
 		Div(text='Salaries per 1.0 FTE are shown to allow comparisons for employees not on a standard full-time appointment.'),
 	),
 	figure())
