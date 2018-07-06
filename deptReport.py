@@ -33,7 +33,7 @@ def selection():
 	df['Rank'] = df['value'].rank(ascending=False)
 	df['ylabel'] = df.apply(lambda row: '{:g} {}'.format(row['Rank'], row['empname']), axis=1)
 	df['value_scaled'] = df['value']/1000
-	return df.sort_values('value', ascending=True).iloc[exclude]
+	return df.sort_values('value', na_position='first', ascending=True).iloc[exclude]
 
 def update():
 	df = selection()
