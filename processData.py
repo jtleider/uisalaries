@@ -73,7 +73,7 @@ def collegeSalaries(campus, code, sleep=30):
 
 	return data
 
-# Pull salary data for each UIC college
+# Pull salary data for each University of Illinois college
 colleges = {
 	'Urbana-Champaign': 'KL KY LD NQ LT LN NA NT KM KT NU KW KN MY KP NN KR KS LQ KU KV LB NS NB LM NH LF LP LG LL NC LR NJ LC NP NE',
 	'Chicago': 'JV GF FR JY FL JP JA FZ GA FV GE GC GS FN FM FP FQ JM FS JD GH GT JT FT GQ FW JS FX JB JU FY GL JK GN JL GP HY JW JE JX JC JJ JF',

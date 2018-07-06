@@ -1,3 +1,5 @@
+# Report across University of Illinois departments
+
 import pandas as pd
 from bokeh.models import ColumnDataSource
 from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter, Select, Div
@@ -7,10 +9,12 @@ from gini import gini
 
 salaries = pd.read_csv('salaries.csv', index_col=0)
 
+# User controls
 selectVariable = Select(title='Variable', options=['Current Salary', 'Previous Salary'])
 selectCampus = Select(title='Campus', value='All', options=['All', 'Chicago', 'Springfield', 'Urbana-Champaign', 'System'])
 selectCollege = Select(title='College')
 
+# Update plot
 def update():
 	var = 'newsalaryperfte'
 	if selectVariable.value == 'Previous Salary': var = 'cursalaryperfte'
@@ -38,8 +42,10 @@ def update():
 		TableColumn(field='max', title='Max', formatter=NumberFormatter(format="$0,0")),
 		TableColumn(field='gini', title='Gini Coefficient', formatter=NumberFormatter(format="0.000")),
 	]
+	# Note: there is a bug where the last row of the DataTable cuts off. This appears to be a bug in Bokeh to which there is currently no workaround.
 	l.children[2] = DataTable(source=ColumnDataSource(df), columns=columns, height=650, width=1600, selectable=True, scroll_to_selection=True)
 
+# Handle changes to user controls
 def selectCampusUpdate():
 	if selectCampus.value == 'All': selectCollege.options = ['All']
 	else: selectCollege.options = ['All'] + sorted(list(set(list(salaries.loc[salaries.campus == selectCampus.value, 'college']))))
@@ -50,6 +56,7 @@ selectVariable.on_change('value', lambda attr, old, new: update())
 selectCampus.on_change('value', lambda attr, old, new: selectCampusUpdate())
 selectCollege.on_change('value', lambda attr, old, new: update())
 
+# Layout
 l = layout([
 	[Div(text='<font size="3"><b>Report on Salaries across Departments</b></font>', width=500)],
 	[selectVariable, selectCampus, selectCollege],
