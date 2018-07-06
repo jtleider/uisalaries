@@ -18,7 +18,8 @@ divide the salary by employees' full-time equivalent percentage (FTE) to
 facilitate comparisons. This way, an employee working part-time can still enter
 into the presentation of the salary distribution.
 
-There is some missing data where the FTE for an employee was shown as zero.
+There is some missing data where the FTE for an employee was shown as zero
+or an employee was listed with multiple positions and no total was shown.
 
 This project includes three main files:
 * processData.py downloads the data, processes it, and saves CSV files with the raw data plus some additional computed variables (uiData.csv) and with summary data by employee within campus/college/department (salaries.csv).
