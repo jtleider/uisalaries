@@ -4,6 +4,7 @@ from bokeh.models import ColumnDataSource, HoverTool, Span, Label
 from bokeh.models.widgets import Select, Div, Slider
 from bokeh.layouts import row, column
 from bokeh.io import curdoc
+from gini import gini
 
 salaries = pd.read_csv('salaries.csv', index_col=0)
 assert all(salaries.groupby('dept')['college'].nunique() == 1)
@@ -35,10 +36,10 @@ def selection():
 	df['Rank'] = df['value'].rank(ascending=False)
 	df['ylabel'] = df.apply(lambda row: '{:g} {}'.format(row['Rank'], row['empname']), axis=1)
 	df['value_scaled'] = df['value']/1000
-	return df.sort_values('value', na_position='first', ascending=True).iloc[exclude], df['value_scaled'].quantile(0.5)
+	return df.sort_values('value', na_position='first', ascending=True).iloc[exclude], df['value_scaled'].quantile(0.5), gini(df['value_scaled'])
 
 def update():
-	df, median = selection()
+	df, median, giniValue = selection()
 	source = ColumnDataSource(df)
 	newfigure = figure(plot_width=1200, plot_height=60+len(df)*15, y_range=df['ylabel'], x_axis_label='Salary in 1000s', tooltips=TOOLTIPS, tools='hover,save')
 	newfigure.title.text_font_size = '20pt'
@@ -47,6 +48,7 @@ def update():
 	newfigure.hbar(y='ylabel', height=0.9, right='value_scaled', source=source)
 	newfigure.add_layout(Span(location=median, dimension='height', line_dash='dashed', line_width=3))
 	newfigure.add_layout(Label(x=median+2, y=(len(df)-1)/2, text='Median (no exclusions)'))
+	newfigure.add_layout(Label(x=630, y=0, x_units='screen', text='Gini coefficient = {:.3f} (no exclusions)'.format(giniValue)))
 	layout.children[1] = newfigure
 
 def selectCampusUpdate():
