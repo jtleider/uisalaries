@@ -22,7 +22,7 @@ def update():
 	else: collegeSelection = (salaries.college == college)
 	df = salaries.loc[campusSelection & collegeSelection].groupby(
 		['campus', 'college', 'dept'])[var].agg(
-		['size', 'count', 'min', 'mean', 'max', gini]).reset_index()
+		['size', 'count', 'min', 'median', 'max', gini]).reset_index()
 	columns = [
 		TableColumn(field='campus', title='Campus'),
 		TableColumn(field='college', title='College'),
@@ -30,7 +30,7 @@ def update():
 		TableColumn(field='size', title='# of Employees'),
 		TableColumn(field='count', title='# with Data'),
 		TableColumn(field='min', title='Min', formatter=NumberFormatter(format="$0,0")),
-		TableColumn(field='mean', title='Mean', formatter=NumberFormatter(format="$0,0")),
+		TableColumn(field='median', title='Median', formatter=NumberFormatter(format="$0,0")),
 		TableColumn(field='max', title='Max', formatter=NumberFormatter(format="$0,0")),
 		TableColumn(field='gini', title='Gini Coefficient', formatter=NumberFormatter(format="0.000")),
 	]
