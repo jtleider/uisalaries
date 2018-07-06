@@ -10,14 +10,14 @@ from gini import gini
 salaries = pd.read_csv('salaries.csv', index_col=0)
 
 # User controls
-selectVariable = Select(title='Variable', options=['Current Salary', 'Previous Salary'])
+selectVariable = Select(title='Variable', options=['Current Salary (AY 2017-2018)', 'Previous Salary (AY 2016-2017)'])
 selectCampus = Select(title='Campus', value='All', options=['All', 'Chicago', 'Springfield', 'Urbana-Champaign', 'System'])
 selectCollege = Select(title='College')
 
 # Update plot
 def update():
 	var = 'newsalaryperfte'
-	if selectVariable.value == 'Previous Salary': var = 'cursalaryperfte'
+	if selectVariable.value == 'Previous Salary (AY 2016-2017)': var = 'cursalaryperfte'
 	campus = selectCampus.value
 	if campus == 'All': campusSelection = (salaries.campus == salaries.campus)
 	else: campusSelection = (salaries.campus == campus)

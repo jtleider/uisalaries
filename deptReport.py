@@ -14,7 +14,7 @@ assert all(salaries.groupby('dept')['college'].nunique() == 1)
 assert all(salaries.groupby('college')['campus'].nunique() == 1)
 
 # User controls
-selectVariable = Select(title='Variable', options=['Current Salary', 'Previous Salary'])
+selectVariable = Select(title='Variable', options=['Current Salary (AY 2017-2018)', 'Previous Salary (AY 2016-2017)'])
 selectCampus = Select(title='Campus', value='Chicago', options=['Chicago', 'Springfield', 'Urbana-Champaign', 'System'])
 selectCollege = Select(title='College')
 selectDept = Select(title='Department')
@@ -23,7 +23,7 @@ excludeSlider = Slider(start=0, end=5, value=0, step=1, title="Exclude top")
 # Return selection of salary data
 def selection():
 	var = 'newsalaryperfte'
-	if selectVariable.value == 'Previous Salary': var = 'cursalaryperfte'
+	if selectVariable.value == 'Previous Salary (AY 2016-2017)': var = 'cursalaryperfte'
 	campus = selectCampus.value
 	college = selectCollege.value
 	dept = selectDept.value
