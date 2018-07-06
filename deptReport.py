@@ -6,6 +6,8 @@ from bokeh.layouts import row, column
 from bokeh.io import curdoc
 
 salaries = pd.read_csv('salaries.csv', index_col=0)
+assert all(salaries.groupby('dept')['college'].nunique() == 1)
+assert all(salaries.groupby('college')['campus'].nunique() == 1)
 
 selectVariable = Select(title='Variable', options=['Current Salary', 'Previous Salary'])
 selectCampus = Select(title='Campus', value='Chicago', options=['Chicago', 'Springfield', 'Urbana-Champaign', 'System'])
