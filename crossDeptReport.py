@@ -20,9 +20,11 @@ def update():
 	college = selectCollege.value
 	if college == 'All': collegeSelection = (salaries.college == salaries.college)
 	else: collegeSelection = (salaries.college == college)
+	def p25(x): return x.quantile(0.25)
+	def p75(x): return x.quantile(0.75)
 	df = salaries.loc[campusSelection & collegeSelection].groupby(
 		['campus', 'college', 'dept'])[var].agg(
-		['size', 'count', 'min', 'median', 'max', gini]).reset_index()
+		['size', 'count', 'min', p25, 'median', p75, 'max', gini]).reset_index()
 	columns = [
 		TableColumn(field='campus', title='Campus'),
 		TableColumn(field='college', title='College'),
@@ -30,7 +32,9 @@ def update():
 		TableColumn(field='size', title='# of Employees'),
 		TableColumn(field='count', title='# with Data'),
 		TableColumn(field='min', title='Min', formatter=NumberFormatter(format="$0,0")),
+		TableColumn(field='p25', title='25th Percentile', formatter=NumberFormatter(format="$0,0")),
 		TableColumn(field='median', title='Median', formatter=NumberFormatter(format="$0,0")),
+		TableColumn(field='p75', title='75th Percentile', formatter=NumberFormatter(format="$0,0")),
 		TableColumn(field='max', title='Max', formatter=NumberFormatter(format="$0,0")),
 		TableColumn(field='gini', title='Gini Coefficient', formatter=NumberFormatter(format="0.000")),
 	]
